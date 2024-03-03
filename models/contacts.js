@@ -1,8 +1,12 @@
+require("dotenv").config({ path: "./.env.credentials" });
 const mongoose = require("mongoose");
 const { Schema } = mongoose;
 
-const connectionString =
-  "mongodb+srv://toysan3:BvNf%253Rimongodb@cluster0.nw4xzpi.mongodb.net/";
+const dbUser = process.env.DB_USER;
+const dbPassword = encodeURIComponent(process.env.DB_PASSWORD);
+const dbHost = process.env.DB_HOST;
+
+const connectionString = `mongodb+srv://${dbUser}:${dbPassword}@${dbHost}/`;
 
 mongoose
   .connect(connectionString, {

@@ -1,4 +1,5 @@
 const express = require("express");
+const Joi = require("joi");
 const {
   listContacts,
   getContactById,
@@ -9,6 +10,20 @@ const {
 } = require("../../models/contacts");
 
 const router = express.Router();
+
+const contactSchema = Joi.object({
+  name: Joi.string().required(),
+  email: Joi.string().email().required(),
+  phone: Joi.string().required(),
+  favorite: Joi.boolean(),
+});
+
+const updateContactSchema = Joi.object({
+  name: Joi.string(),
+  email: Joi.string().email(),
+  phone: Joi.string(),
+  favorite: Joi.boolean(),
+}).or("name", "email", "phone", "favorite");
 
 router.get("/", async (req, res, next) => {
   try {
@@ -33,7 +48,11 @@ router.get("/:contactId", async (req, res, next) => {
 
 router.post("/", async (req, res, next) => {
   try {
-    const newContact = await addContact(req.body);
+    const { value, error } = contactSchema.validate(req.body);
+    if (error) {
+      return res.status(400).json({ message: error.details[0].message });
+    }
+    const newContact = await addContact(value);
     res.status(201).json(newContact);
   } catch (error) {
     res.status(400).json({ message: error.message });
@@ -54,7 +73,11 @@ router.delete("/:contactId", async (req, res, next) => {
 
 router.put("/:contactId", async (req, res, next) => {
   try {
-    const updatedContact = await updateContact(req.params.contactId, req.body);
+    const { value, error } = updateContactSchema.validate(req.body);
+    if (error) {
+      return res.status(400).json({ message: error.details[0].message });
+    }
+    const updatedContact = await updateContact(req.params.contactId, value);
     if (!updatedContact) {
       return res.status(404).json({ message: "Not found" });
     }
