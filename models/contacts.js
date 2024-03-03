@@ -1,35 +1,16 @@
 const mongoose = require("mongoose");
 const { Schema } = mongoose;
 
-const connectionString =
-  "mongodb+srv://toysan3:BvNf%253Rimongodb@cluster0.nw4xzpi.mongodb.net/";
-
-mongoose
-  .connect(connectionString, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-  })
-  .then(() => console.log("Database connection successful"))
-  .catch((err) => {
-    console.error("Database connection error", err);
-    process.exit(1);
-  });
-
 const contactSchema = new Schema(
   {
-    name: {
-      type: String,
-      required: [true, "Set name for contact"],
-    },
-    email: {
-      type: String,
-    },
-    phone: {
-      type: String,
-    },
-    favorite: {
-      type: Boolean,
-      default: false,
+    name: { type: String, required: true },
+    email: { type: String, required: true },
+    phone: { type: String, required: true },
+    favorite: { type: Boolean, default: false },
+    owner: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
     },
   },
   { timestamps: true }
@@ -37,29 +18,36 @@ const contactSchema = new Schema(
 
 const Contact = mongoose.model("Contact", contactSchema);
 
-const listContacts = async () => await Contact.find();
-const getContactById = async (contactId) => await Contact.findById(contactId);
-const removeContact = async (contactId) =>
-  await Contact.findByIdAndRemove(contactId);
-const addContact = async (body) => {
-  const contact = new Contact(body);
+async function listContacts(userId) {
+  return await Contact.find({ owner: userId });
+}
+
+async function getContactById(contactId, userId) {
+  return await Contact.findOne({ _id: contactId, owner: userId });
+}
+
+async function addContact(contactData) {
+  const contact = new Contact(contactData);
   await contact.save();
   return contact;
-};
-const updateContact = async (contactId, body) =>
-  await Contact.findByIdAndUpdate(contactId, body, { new: true });
-const updateStatusContact = async (contactId, body) =>
-  await Contact.findByIdAndUpdate(
-    contactId,
-    { favorite: body.favorite },
+}
+
+async function updateContact(contactId, userId, updateData) {
+  return await Contact.findOneAndUpdate(
+    { _id: contactId, owner: userId },
+    updateData,
     { new: true }
   );
+}
+
+async function removeContact(contactId, userId) {
+  return await Contact.findOneAndDelete({ _id: contactId, owner: userId });
+}
 
 module.exports = {
   listContacts,
   getContactById,
-  removeContact,
   addContact,
   updateContact,
-  updateStatusContact,
+  removeContact,
 };
