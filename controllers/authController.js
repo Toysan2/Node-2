@@ -10,53 +10,53 @@ const authSchema = Joi.object({
 
 exports.register = async (req, res) => {
   try {
-    const { error } = authSchema.validate(req.body);
+    const { value, error } = authSchema.validate(req.body);
     if (error) {
-      return res.status(400).send(error.details[0].message);
+      return res.status(400).json({ message: error.details[0].message });
     }
 
-    const { email, password } = req.body;
-
-    const oldUser = await User.findOne({ email });
+    const oldUser = await User.findOne({ email: value.email });
     if (oldUser) {
-      return res.status(409).send("User Already Exist. Please Login");
+      return res
+        .status(409)
+        .json({ message: "User Already Exist. Please Login" });
     }
 
-    const encryptedPassword = await bcrypt.hash(password, 10);
+    const encryptedPassword = await bcrypt.hash(value.password, 10);
 
     const user = await User.create({
-      email,
+      email: value.email,
       password: encryptedPassword,
     });
 
     const token = jwt.sign(
-      { user_id: user._id, email },
+      { user_id: user._id, email: value.email },
       process.env.TOKEN_SECRET,
       {
         expiresIn: "2h",
       }
     );
+
     user.token = token;
 
     res.status(201).json(user);
   } catch (err) {
-    console.log(err);
+    console.error(err);
+    res.status(500).json({ message: "Internal Server Error" });
   }
 };
 
 exports.login = async (req, res) => {
   try {
-    const { error } = authSchema.validate(req.body);
+    const { value, error } = authSchema.validate(req.body);
     if (error) {
-      return res.status(400).send(error.details[0].message);
+      return res.status(400).json({ message: error.details[0].message });
     }
 
-    const { email, password } = req.body;
-
-    const user = await User.findOne({ email });
-    if (user && (await bcrypt.compare(password, user.password))) {
+    const user = await User.findOne({ email: value.email });
+    if (user && (await bcrypt.compare(value.password, user.password))) {
       const token = jwt.sign(
-        { user_id: user._id, email },
+        { user_id: user._id, email: value.email },
         process.env.TOKEN_SECRET,
         {
           expiresIn: "2h",
@@ -67,9 +67,10 @@ exports.login = async (req, res) => {
 
       res.status(200).json(user);
     } else {
-      res.status(400).send("Invalid Credentials");
+      res.status(400).json({ message: "Invalid Credentials" });
     }
   } catch (err) {
-    console.log(err);
+    console.error(err);
+    res.status(500).json({ message: "Internal Server Error" });
   }
 };
