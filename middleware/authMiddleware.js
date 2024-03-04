@@ -1,4 +1,5 @@
 const jwt = require("jsonwebtoken");
+const User = require("../models/userModel");
 
 const authenticateToken = (req, res, next) => {
   const authHeader = req.headers.authorization;
@@ -8,13 +9,24 @@ const authenticateToken = (req, res, next) => {
     return res.sendStatus(401);
   }
 
-  jwt.verify(token, process.env.TOKEN_SECRET, (err, user) => {
+  jwt.verify(token, process.env.TOKEN_SECRET, async (err, decoded) => {
     if (err) {
       return res.sendStatus(403);
     }
 
-    req.user = user;
-    next();
+    try {
+      const user = await User.findById(decoded.user_id);
+      if (!user) {
+        return res.sendStatus(404);
+      }
+
+      req.user = user;
+
+      next();
+    } catch (error) {
+      console.error(error);
+      return res.sendStatus(500);
+    }
   });
 };
 

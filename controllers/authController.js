@@ -1,21 +1,28 @@
 const User = require("../models/userModel");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const Joi = require("joi");
+
+const authSchema = Joi.object({
+  email: Joi.string().email().required(),
+  password: Joi.string().min(8).required(),
+});
 
 exports.register = async (req, res) => {
   try {
-    const { email, password } = req.body;
-    if (!(email && password)) {
-      return res.status(400).send("All input is required");
+    const { error } = authSchema.validate(req.body);
+    if (error) {
+      return res.status(400).send(error.details[0].message);
     }
 
-    const oldUser = await User.findOne({ email });
+    const { email, password } = req.body;
 
+    const oldUser = await User.findOne({ email });
     if (oldUser) {
       return res.status(409).send("User Already Exist. Please Login");
     }
 
-    const encryptedPassword = await bcrypt.hash(password, 10); // Poprawka tutaj
+    const encryptedPassword = await bcrypt.hash(password, 10);
 
     const user = await User.create({
       email,
@@ -39,14 +46,14 @@ exports.register = async (req, res) => {
 
 exports.login = async (req, res) => {
   try {
-    const { email, password } = req.body;
-
-    if (!(email && password)) {
-      res.status(400).send("All input is required");
+    const { error } = authSchema.validate(req.body);
+    if (error) {
+      return res.status(400).send(error.details[0].message);
     }
 
-    const user = await User.findOne({ email });
+    const { email, password } = req.body;
 
+    const user = await User.findOne({ email });
     if (user && (await bcrypt.compare(password, user.password))) {
       const token = jwt.sign(
         { user_id: user._id, email },
