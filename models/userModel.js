@@ -18,8 +18,14 @@ const userSchema = new mongoose.Schema({
     required: [true, "Password is required"],
     minlength: 8,
   },
-  token: {
+  avatarURL: {
     type: String,
+    default: "",
+  },
+  subscription: {
+    type: String,
+    enum: ["starter", "pro", "business"],
+    default: "starter",
   },
 });
 
