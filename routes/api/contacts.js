@@ -3,6 +3,7 @@ const router = express.Router();
 const { authenticateToken } = require("../../middleware/authMiddleware");
 const Contact = require("../../models/contactModel");
 const { body, validationResult } = require("express-validator");
+const { updateStatusContact } = require("../../controllers/contactController"); // Zaimportuj funkcję
 
 router.get("/", authenticateToken, async (req, res) => {
   try {
@@ -88,21 +89,24 @@ router.put("/:contactId", authenticateToken, async (req, res) => {
   }
 });
 
-router.patch("/:contactId/favorite", async (req, res, next) => {
+router.patch("/:contactId/favorite", authenticateToken, async (req, res) => {
+  // Make sure to authenticate this route as well
   try {
     const { favorite } = req.body;
     if (favorite === undefined) {
       return res.status(400).json({ message: "missing field favorite" });
     }
-    const updatedContact = await updateStatusContact(req.params.contactId, {
-      favorite,
-    });
+    const updatedContact = await updateStatusContact(
+      req.params.contactId,
+      favorite
+    ); // Adjusted to pass favorite directly
     if (!updatedContact) {
       return res.status(404).json({ message: "Not found" });
     }
     res.json(updatedContact);
   } catch (error) {
-    next(error);
+    console.error(error);
+    res.status(500).json({ message: "Internal Server Error" });
   }
 });
 

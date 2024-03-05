@@ -7,6 +7,8 @@ const contactsRouter = require("./routes/api/contacts");
 const usersRouter = require("./routes/api/users");
 
 const app = express();
+app.use(express.static("public"));
+app.use("/avatars", express.static("public/avatars"));
 
 const formatsLogger = app.get("env") === "development" ? "dev" : "short";
 app.use(logger(formatsLogger));
@@ -24,11 +26,6 @@ app.use((req, res, next) => {
 app.use((err, req, res, next) => {
   res.status(err.status || 500);
   res.json({ message: err.message || "Internal Server Error", error: err });
-});
-
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
 });
 
 module.exports = app;
