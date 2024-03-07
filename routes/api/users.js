@@ -64,4 +64,8 @@ router.patch(
   }
 );
 
+router.get("/verify/:verificationToken", authController.verifyEmail);
+
+router.post("/verify", authController.resendVerificationEmail);
+
 module.exports = router;
